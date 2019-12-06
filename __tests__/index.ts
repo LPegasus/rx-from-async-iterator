@@ -10,6 +10,11 @@ async function sleep() {
   return new Promise(r => setTimeout(r, 1000));
 }
 
+async function* gen3() {
+  yield* gen2();
+  yield 666;
+}
+
 async function* gen2(error?: Error) {
   yield "a";
   await sleep();
@@ -57,4 +62,22 @@ it("fromAsyncIterator with error", async () => {
 
   expect(error).toBeCalledWith(err);
   expect(complete).toBeCalledTimes(0);
+});
+
+it("fromAsyncIterator with sub async*", async () => {
+  const callback = jest.fn();
+  const error = jest.fn();
+  const complete = jest.fn();
+  await new Promise(r => {
+    fromAsyncIterator(gen3())
+      .subscribe(callback, error, complete)
+      .add(r);
+  });
+  const results = ["a", "b", "c", 1, 2, 3, 666];
+  expect(callback).toHaveBeenCalledTimes(results.length);
+  results.forEach((value, i) => {
+    expect(callback).toHaveBeenNthCalledWith(i + 1, value);
+  });
+  expect(error).not.toBeCalled();
+  expect(complete).toBeCalledTimes(1);
 });
