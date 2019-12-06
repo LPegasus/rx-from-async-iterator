@@ -1,0 +1,49 @@
+{
+  "name": "rx-from-async-iterator",
+  "version": "0.0.1",
+  "description": "Convert asyncGenerator object to Rx.Observable",
+  "main": "lib/index.js",
+  "module": "es/index.js",
+  "typings": "es/index.d.ts",
+  "scripts": {
+    "test": "jest",
+    "build": "npm run build:es&&npm run build:lib",
+    "build:es": "rimraf es&&tsc -p tsconfig.json",
+    "build:lib": "rimraf lib&&tsc -p tsconfig.es5.json",
+    "prepare": "npm build",
+    "pub": "npm publish --registry=https://registry.npmjs.org"
+  },
+  "peerDependencies": {
+    "rxjs": ">=6"
+  },
+  "files": [
+    "src",
+    "lib",
+    "es",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LPegasus/rx-from-async-iterator.git"
+  },
+  "author": {
+    "name": "LPegasus",
+    "email": "pegusas1@hotmail.com"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LPegasus/rx-from-async-iterator/issues"
+  },
+  "homepage": "https://github.com/LPegasus/rx-from-async-iterator#readme",
+  "devDependencies": {
+    "@types/jest": "^24.0.23",
+    "jest": "^24.9.0",
+    "rimraf": "^3.0.0",
+    "rxjs": "^6.5.3",
+    "ts-jest": "^24.2.0",
+    "typescript": "^3.7.3"
+  },
+  "dependencies": {
+    "rxjs": "^6.0.0"
+  }
+}
