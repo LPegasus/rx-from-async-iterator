@@ -1,5 +1,16 @@
 language: node_js
+env:
+  - CODECOV_TOKEN="a2b0ea09-1966-4427-8c82-c96662308164"
+node_js:
+  - "10"
 scripts:
   - npm install codecov -g
+  - npm test
+branches:
+  only:
+    - master
+cache:
+  directories:
+    - "node_modules"
 after_success:
   - codecov
