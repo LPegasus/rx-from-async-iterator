@@ -1,6 +1,6 @@
 language: node_js
 env:
-  - CODECOV_TOKEN="a2b0ea09-1966-4427-8c82-c96662308164"
+  - CODECOV_TOKEN="2c31002d-d9f0-4f97-9215-10da9463d327"
 node_js:
   - "10"
 scripts:
