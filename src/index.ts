@@ -3,17 +3,48 @@
 import { Observable } from "rxjs";
 
 export function fromAsyncIterator<T = unknown>(
-  g: AsyncGenerator<T, void, void>
+  g:
+    | AsyncGenerator<T, void, void>
+    | ((stop: StopCallback) => AsyncGenerator<T, void, void>)
 ) {
+  const cancellationToken = createDefaultCancellation();
+  const _g: AsyncGenerator<T, void, void> =
+    typeof g === "function" ? g(cancellationToken.cancel) : g;
   /* istanbul ignore if */
-  if (!isAsyncIterator(g)) {
+  if (!isAsyncIterator(_g)) {
     throw new TypeError("fromAsyncIterator received wrong type param.");
   } else {
-    return new Observable<T>(asStream(g));
+    return new Observable<T>(asStream(_g, cancellationToken));
   }
 }
 
-export function asStream<T = unknown>(g: AsyncGenerator<T, void, void>) {
+export interface CancellationToken {
+  canceled(): boolean;
+  cancel(): void;
+}
+
+export function createDefaultCancellation(): CancellationToken {
+  let stopped = false;
+  return {
+    cancel: () => {
+      if (!stopped) {
+        stopped = true;
+      } else {
+        console.warn("AsyncIterator already stopped.");
+      }
+    },
+    canceled() {
+      return stopped;
+    }
+  };
+}
+
+export type StopCallback = () => void;
+
+export function asStream<T = unknown>(
+  g: AsyncGenerator<T, void, void>,
+  cancellation: CancellationToken
+) {
   return (ob: {
     next(result: T): void;
     complete(): void;
@@ -26,8 +57,12 @@ export function asStream<T = unknown>(g: AsyncGenerator<T, void, void>) {
           if (i.done) {
             ob.complete();
           } else {
-            ob.next(i.value);
-            run();
+            if (cancellation.canceled()) {
+              ob.complete();
+            } else {
+              ob.next(i.value);
+              run();
+            }
           }
         },
         err => {
