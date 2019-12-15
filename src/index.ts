@@ -39,7 +39,7 @@ export function asStream<T = unknown>(g: AsyncGenerator<T, void, void>) {
   };
 }
 
-function isAsyncIterator(g: any): g is AsyncGenerator {
+export function isAsyncIterator(g: any): g is AsyncGenerator {
   /* istanbul ignore if */
   if (!Symbol.asyncIterator) {
     throw new TypeError("Symbol.asyncIterator is not defined.");
