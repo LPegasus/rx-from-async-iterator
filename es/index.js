@@ -1,15 +1,33 @@
 /// <reference lib="es2018.asynciterable" />
 import { Observable } from "rxjs";
 export function fromAsyncIterator(g) {
+    const cancellationToken = createDefaultCancellation();
+    const _g = typeof g === "function" ? g(cancellationToken.cancel) : g;
     /* istanbul ignore if */
-    if (!isAsyncIterator(g)) {
+    if (!isAsyncIterator(_g)) {
         throw new TypeError("fromAsyncIterator received wrong type param.");
     }
     else {
-        return new Observable(asStream(g));
+        return new Observable(asStream(_g, cancellationToken));
     }
 }
-export function asStream(g) {
+export function createDefaultCancellation() {
+    let stopped = false;
+    return {
+        cancel: () => {
+            if (!stopped) {
+                stopped = true;
+            }
+            else {
+                console.warn("AsyncIterator already stopped.");
+            }
+        },
+        canceled() {
+            return stopped;
+        }
+    };
+}
+export function asStream(g, cancellation) {
     return (ob) => {
         const run = () => {
             const result = g.next();
@@ -18,8 +36,13 @@ export function asStream(g) {
                     ob.complete();
                 }
                 else {
-                    ob.next(i.value);
-                    run();
+                    if (cancellation.canceled()) {
+                        ob.complete();
+                    }
+                    else {
+                        ob.next(i.value);
+                        run();
+                    }
                 }
             }, err => {
                 ob.error(err);
@@ -28,7 +51,7 @@ export function asStream(g) {
         run();
     };
 }
-function isAsyncIterator(g) {
+export function isAsyncIterator(g) {
     /* istanbul ignore if */
     if (!Symbol.asyncIterator) {
         throw new TypeError("Symbol.asyncIterator is not defined.");
