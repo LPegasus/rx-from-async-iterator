@@ -9,26 +9,34 @@ export function fromAsyncIterator<T = unknown>(
   if (!isAsyncIterator(g)) {
     throw new TypeError("fromAsyncIterator received wrong type param.");
   } else {
-    return new Observable<T>(ob => {
-      const run = () => {
-        const result = g.next();
-        result.then(
-          i => {
-            if (i.done) {
-              ob.complete();
-            } else {
-              ob.next(i.value);
-              run();
-            }
-          },
-          err => {
-            ob.error(err);
-          }
-        );
-      };
-      run();
-    });
+    return new Observable<T>(asStream(g));
   }
+}
+
+export function asStream<T = unknown>(g: AsyncGenerator<T, void, void>) {
+  return (ob: {
+    next(result: T): void;
+    complete(): void;
+    error(err: any): void;
+  }) => {
+    const run = () => {
+      const result = g.next();
+      result.then(
+        i => {
+          if (i.done) {
+            ob.complete();
+          } else {
+            ob.next(i.value);
+            run();
+          }
+        },
+        err => {
+          ob.error(err);
+        }
+      );
+    };
+    run();
+  };
 }
 
 function isAsyncIterator(g: any): g is AsyncGenerator {
