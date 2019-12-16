@@ -43,7 +43,12 @@ export type StopCallback = () => void;
 
 export function asStream<T = unknown>(
   g: AsyncGenerator<T, void, void>,
-  cancellation: CancellationToken
+  cancellation: CancellationToken = {
+    cancel() {},
+    canceled() {
+      return false;
+    }
+  }
 ) {
   return (ob: {
     next(result: T): void;

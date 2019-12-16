@@ -7,7 +7,7 @@ export interface CancellationToken {
 }
 export declare function createDefaultCancellation(): CancellationToken;
 export declare type StopCallback = () => void;
-export declare function asStream<T = unknown>(g: AsyncGenerator<T, void, void>, cancellation: CancellationToken): (ob: {
+export declare function asStream<T = unknown>(g: AsyncGenerator<T, void, void>, cancellation?: CancellationToken): (ob: {
     next(result: T): void;
     complete(): void;
     error(err: any): void;

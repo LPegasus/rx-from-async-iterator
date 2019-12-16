@@ -27,7 +27,12 @@ export function createDefaultCancellation() {
         }
     };
 }
-export function asStream(g, cancellation) {
+export function asStream(g, cancellation = {
+    cancel() { },
+    canceled() {
+        return false;
+    }
+}) {
     return (ob) => {
         const run = () => {
             const result = g.next();
