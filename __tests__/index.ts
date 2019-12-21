@@ -1,4 +1,5 @@
-import { fromAsyncIterator } from "../src/index";
+import { fromAsyncIterator, isAsyncIteratorFunction } from "../src/index";
+import { isAsyncIterator } from './../src/index';
 
 function* gen() {
   yield 1;
@@ -6,8 +7,8 @@ function* gen() {
   yield 3;
 }
 
-async function sleep() {
-  return new Promise(r => setTimeout(r, 16));
+async function sleep(time = 16) {
+  return new Promise(r => setTimeout(r, time));
 }
 
 async function* gen3() {
@@ -100,31 +101,35 @@ it("fromAsyncIterator with function", async () => {
   expect(complete).toBeCalledTimes(1);
 });
 
-it("fromAsyncIterator run and stop", async () => {
-  const callback = jest.fn();
-  const error = jest.fn();
-  const complete = jest.fn();
-
-  await new Promise(r => {
-    fromAsyncIterator(async function*(cancel) {
-      await sleep();
-      yield 1;
-      await sleep();
-      yield 2;
-      cancel();
-      cancel();
-      await sleep();
-      yield 3;
-    })
-      .subscribe(callback, error, complete)
-      .add(r);
+it("after unsubscribe should stop AsyncIterator", done => {
+  let i = 0;
+  const stream = fromAsyncIterator(async function*() {
+    while (true) {
+      await sleep(50);
+      ++i;
+      yield i;
+    }
   });
-
-  const results = [1, 2];
-  expect(callback).toHaveBeenCalledTimes(results.length);
-  results.forEach((value, i) => {
-    expect(callback).toHaveBeenNthCalledWith(i + 1, value);
+  const subscription = stream.subscribe(d => {
+    if (d === 5) {
+      subscription.unsubscribe();
+    }
   });
-  expect(error).not.toBeCalled();
-  expect(complete).toBeCalledTimes(1);
+  subscription.add(() => {
+    expect(i).toBe(5);
+    setTimeout(() => {
+      expect(i).toBe(6);
+      done();
+    }, 60)
+  });
+});
+
+it("isAsyncIteratorFunction", () => {
+  expect(isAsyncIteratorFunction(gen)).toBeFalsy();
+  expect(isAsyncIteratorFunction(gen3)).toBeTruthy();
+});
+
+it("isAsyncIterator", () => {
+  expect(isAsyncIterator(gen())).toBeFalsy();
+  expect(isAsyncIterator(gen3())).toBeTruthy();
 });

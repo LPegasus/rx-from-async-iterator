@@ -1,53 +1,23 @@
-/// <reference lib="es2018.asynciterable" />
 import { Observable } from "rxjs";
 export function fromAsyncIterator(g) {
-    const cancellationToken = createDefaultCancellation();
-    const _g = typeof g === "function" ? g(cancellationToken.cancel) : g;
-    /* istanbul ignore if */
-    if (!isAsyncIterator(_g)) {
-        throw new TypeError("fromAsyncIterator received wrong type param.");
-    }
-    else {
-        return new Observable(asStream(_g, cancellationToken));
-    }
+    const _g = typeof g === "function" ? g : () => g;
+    return new Observable(asStream(_g));
 }
-export function createDefaultCancellation() {
-    let stopped = false;
-    return {
-        cancel: () => {
-            if (!stopped) {
-                stopped = true;
-            }
-            else {
-                console.warn("AsyncIterator already stopped.");
-            }
-        },
-        canceled() {
-            return stopped;
-        }
-    };
-}
-export function asStream(g, cancellation = {
-    cancel() { },
-    canceled() {
-        return false;
-    }
-}) {
+export function asStream(gen) {
     return (ob) => {
+        const g = gen();
         const run = () => {
             const result = g.next();
             result.then(i => {
-                if (i.done) {
+                if (i.done === true) {
                     ob.complete();
                 }
+                else if (ob.closed === true || ob.isStopped === true) {
+                    return;
+                }
                 else {
-                    if (cancellation.canceled()) {
-                        ob.complete();
-                    }
-                    else {
-                        ob.next(i.value);
-                        run();
-                    }
+                    ob.next(i.value);
+                    run();
                 }
             }, err => {
                 ob.error(err);
@@ -63,3 +33,7 @@ export function isAsyncIterator(g) {
     }
     return typeof g[Symbol.asyncIterator] === "function";
 }
+export function isAsyncIteratorFunction(g) {
+    return typeof g === "function" && g.prototype && isAsyncIterator(g.prototype);
+}
+//# sourceMappingURL=index.js.map

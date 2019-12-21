@@ -1,15 +1,15 @@
 {
   "name": "rx-from-async-iterator",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "description": "Convert asyncGenerator object to Rx.Observable",
   "main": "lib/index.js",
   "module": "es/index.js",
   "typings": "es/index.d.ts",
   "scripts": {
-    "test": "jest",
+    "test": "jest --detectOpenHandles",
     "build": "npm run build:es&&npm run build:lib",
     "build:es": "rimraf es&&tsc -p tsconfig.json",
-    "build:lib": "rimraf lib&&tsc -p tsconfig.es5.json",
+    "build:lib": "rimraf lib&&tsc -p tsconfig.lib.json",
     "prepare": "npm run build",
     "pub": "npm publish --registry=https://registry.npmjs.org"
   },
@@ -44,6 +44,7 @@
     "typescript": "^3.7.3"
   },
   "dependencies": {
+    "tslib": "^1.10.0",
     "rxjs": "^6.0.0"
   }
 }

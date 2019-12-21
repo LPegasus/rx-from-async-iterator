@@ -1,21 +1,11 @@
-/// <reference lib="es2018.asynciterable" />
-
 import { Observable } from "rxjs";
 
 export function fromAsyncIterator<T = unknown>(
-  g:
-    | AsyncGenerator<T, void, void>
-    | ((stop: StopCallback) => AsyncGenerator<T, void, void>)
-) {
-  const cancellationToken = createDefaultCancellation();
-  const _g: AsyncGenerator<T, void, void> =
-    typeof g === "function" ? g(cancellationToken.cancel) : g;
-  /* istanbul ignore if */
-  if (!isAsyncIterator(_g)) {
-    throw new TypeError("fromAsyncIterator received wrong type param.");
-  } else {
-    return new Observable<T>(asStream(_g, cancellationToken));
-  }
+  g: AsyncGenerator<T, void, void> | (() => AsyncGenerator<T, void, void>)
+): Observable<T> {
+  const _g: () => AsyncGenerator<T, void, void> =
+    typeof g === "function" ? g : () => g;
+  return new Observable<T>(asStream(_g));
 }
 
 export interface CancellationToken {
@@ -23,51 +13,22 @@ export interface CancellationToken {
   cancel(): void;
 }
 
-export function createDefaultCancellation(): CancellationToken {
-  let stopped = false;
-  return {
-    cancel: () => {
-      if (!stopped) {
-        stopped = true;
-      } else {
-        console.warn("AsyncIterator already stopped.");
-      }
-    },
-    canceled() {
-      return stopped;
-    }
-  };
-}
-
-export type StopCallback = () => void;
-
 export function asStream<T = unknown>(
-  g: AsyncGenerator<T, void, void>,
-  cancellation: CancellationToken = {
-    cancel() {},
-    canceled() {
-      return false;
-    }
-  }
+  gen: () => AsyncGenerator<T, void, void>
 ) {
-  return (ob: {
-    next(result: T): void;
-    complete(): void;
-    error(err: any): void;
-  }) => {
+  return (ob: any) => {
+    const g = gen();
     const run = () => {
       const result = g.next();
       result.then(
         i => {
-          if (i.done) {
+          if (i.done === true) {
             ob.complete();
+          } else if (ob.closed === true || ob.isStopped === true) {
+            return;
           } else {
-            if (cancellation.canceled()) {
-              ob.complete();
-            } else {
-              ob.next(i.value);
-              run();
-            }
+            ob.next(i.value);
+            run();
           }
         },
         err => {
@@ -85,4 +46,9 @@ export function isAsyncIterator(g: any): g is AsyncGenerator {
     throw new TypeError("Symbol.asyncIterator is not defined.");
   }
   return typeof g[Symbol.asyncIterator] === "function";
+}
+
+
+export function isAsyncIteratorFunction(g: any): g is AsyncGeneratorFunction {
+  return typeof g === "function" && g.prototype && isAsyncIterator(g.prototype);
 }
