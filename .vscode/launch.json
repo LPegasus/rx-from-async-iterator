@@ -7,8 +7,8 @@
     {
       "type": "node",
       "request": "attach",
-      "name": "Attach",
-      "port": 9229,
+      "name": "Attach 9230",
+      "port": 9230,
       "skipFiles": [
         "<node_internals>/**"
       ]
@@ -17,9 +17,13 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Program",
-      "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/lib/index.js",
-      "outFiles": ["${workspaceFolder}/**/*.js"]
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "program": "${workspaceFolder}/test.js",
+      "outFiles": [
+        "${workspaceFolder}/**/*.js"
+      ]
     },
     {
       "type": "node",
@@ -34,7 +38,7 @@
           "__tests__/index.ts"
         ]
       },
-      "name": "TaskComponent:debug",
+      "name": "jest",
       "cwd": "${workspaceRoot}",
       "runtimeArgs": [
         "--inspect-brk",

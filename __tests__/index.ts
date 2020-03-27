@@ -1,5 +1,7 @@
+import { interval } from "rxjs";
+import { take, mapTo, map } from "rxjs/operators";
 import { fromAsyncIterator, isAsyncIteratorFunction } from "../src/index";
-import { isAsyncIterator } from './../src/index';
+import { isAsyncIterator } from "./../src/index";
 
 function* gen() {
   yield 1;
@@ -33,7 +35,7 @@ it("fromAsyncIterator", async () => {
   const error = jest.fn();
   const complete = jest.fn();
   await new Promise(r => {
-    fromAsyncIterator(gen2())
+    fromAsyncIterator<string | number>(gen2())
       .subscribe(callback, error, complete)
       .add(r);
   });
@@ -51,7 +53,7 @@ it("fromAsyncIterator with error", async () => {
   const complete = jest.fn();
   const err = new Error();
   await new Promise(r => {
-    fromAsyncIterator(gen2(err))
+    fromAsyncIterator<string | number>(gen2(err))
       .subscribe(callback, error, complete)
       .add(r);
   });
@@ -70,7 +72,7 @@ it("fromAsyncIterator with sub async*", async () => {
   const error = jest.fn();
   const complete = jest.fn();
   await new Promise(r => {
-    fromAsyncIterator(gen3())
+    fromAsyncIterator<string | number>(gen3())
       .subscribe(callback, error, complete)
       .add(r);
   });
@@ -88,7 +90,7 @@ it("fromAsyncIterator with function", async () => {
   const error = jest.fn();
   const complete = jest.fn();
   await new Promise(r => {
-    fromAsyncIterator(gen3)
+    fromAsyncIterator<string | number>(gen3)
       .subscribe(callback, error, complete)
       .add(r);
   });
@@ -120,7 +122,7 @@ it("after unsubscribe should stop AsyncIterator", done => {
     setTimeout(() => {
       expect(i).toBe(6);
       done();
-    }, 60)
+    }, 60);
   });
 });
 
@@ -132,4 +134,57 @@ it("isAsyncIteratorFunction", () => {
 it("isAsyncIterator", () => {
   expect(isAsyncIterator(gen())).toBeFalsy();
   expect(isAsyncIterator(gen3())).toBeTruthy();
+});
+
+it("yield Observable will be concat", done => {
+  const callback = jest.fn();
+  const stream$ = interval(100).pipe(take(3), mapTo("a"));
+
+  fromAsyncIterator(async function*() {
+    yield* gen();
+    yield stream$;
+  }).subscribe(
+    callback,
+    () => {},
+    () => {
+      expect(callback).toHaveBeenNthCalledWith(1, 1);
+      expect(callback).toHaveBeenNthCalledWith(2, 2);
+      expect(callback).toHaveBeenNthCalledWith(3, 3);
+      expect(callback).toHaveBeenNthCalledWith(4, "a");
+      expect(callback).toHaveBeenNthCalledWith(5, "a");
+      expect(callback).toHaveBeenNthCalledWith(6, "a");
+      done();
+    }
+  );
+});
+
+it("yield Observalbe with error", done => {
+  const err = new Error("BOOM!");
+  const callback = jest.fn();
+  const completeCallback = jest.fn();
+  const errCallback = jest.fn(() => {
+    expect(callback).toHaveBeenNthCalledWith(1, 1);
+    expect(callback).toHaveBeenNthCalledWith(2, 2);
+    expect(callback).toHaveBeenNthCalledWith(3, 3);
+    expect(callback).toHaveBeenNthCalledWith(4, 0);
+    expect(callback).toHaveBeenNthCalledWith(5, 1);
+    expect(callback).toHaveBeenCalledTimes(5);
+    expect(completeCallback).toBeCalledTimes(0);
+    expect(errCallback).toHaveBeenCalledWith(err);
+    done();
+  });
+  const stream$ = interval(100).pipe(
+    take(3),
+    map(d => {
+      if (d !== 2) {
+        return d;
+      }
+      throw err;
+    })
+  );
+
+  fromAsyncIterator(async function*() {
+    yield* gen();
+    yield stream$;
+  }).subscribe(callback, errCallback, completeCallback);
 });

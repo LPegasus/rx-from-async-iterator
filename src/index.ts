@@ -1,9 +1,11 @@
-import { Observable } from "rxjs";
+import { Observable, isObservable } from "rxjs";
 
 export function fromAsyncIterator<T = unknown>(
-  g: AsyncGenerator<T, void, void> | (() => AsyncGenerator<T, void, void>)
+  g:
+    | AsyncGenerator<T | Observable<T>, void, void>
+    | (() => AsyncGenerator<T, void, void>)
 ): Observable<T> {
-  const _g: () => AsyncGenerator<T, void, void> =
+  const _g: () => AsyncGenerator<T | Observable<T>, void, void> =
     typeof g === "function" ? g : () => g;
   return new Observable<T>(asStream(_g));
 }
@@ -14,7 +16,7 @@ export interface CancellationToken {
 }
 
 export function asStream<T = unknown>(
-  gen: () => AsyncGenerator<T, void, void>
+  gen: () => AsyncGenerator<T | Observable<T>, void, void>
 ) {
   return (ob: any) => {
     const g = gen();
@@ -27,8 +29,22 @@ export function asStream<T = unknown>(
           } else if (ob.closed === true || ob.isStopped === true) {
             return;
           } else {
-            ob.next(i.value);
-            run();
+            if (isObservable(i.value)) {
+              i.value.subscribe({
+                next(v: T) {
+                  ob.next(v);
+                },
+                error(e: any) {
+                  ob.error(e);
+                },
+                complete() {
+                  run();
+                }
+              });
+            } else {
+              ob.next(i.value);
+              run();
+            }
           }
         },
         err => {
@@ -47,7 +63,6 @@ export function isAsyncIterator(g: any): g is AsyncGenerator {
   }
   return typeof g[Symbol.asyncIterator] === "function";
 }
-
 
 export function isAsyncIteratorFunction(g: any): g is AsyncGeneratorFunction {
   return typeof g === "function" && g.prototype && isAsyncIterator(g.prototype);

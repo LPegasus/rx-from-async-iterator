@@ -18,6 +18,10 @@ A method to convert **AsyncGeneratorObject** to [Rx.Observable](https://rxjs.dev
 
 ```typescript
 import { fromAsyncIterator } from 'rx-from-async-iterator';
+import { fromEvent } from 'rxjs';
+import { take } from 'rxjs/operators';
+
+const click$ = fromEvent('click', document.body).pipe(take(2));
 
 async function sleepOneSecond() {
   return new Promise(r => setTimeout(r, 1000));
@@ -39,6 +43,7 @@ async function* taskAsync(error?: Error) {
   yield "c";
   yield* subTask();
   yield "f";
+  yield click$;
 }
 
 fromAsyncIterator(taskAsync()).subscribe(console.log);
@@ -48,8 +53,9 @@ fromAsyncIterator(taskAsync()).subscribe(console.log);
 // -> 'c'
 // -> 'd'
 // -> 'e'
-// -> 'f'
-/// and one second duration between each letter.
+// -> 'f'  /// and one second duration between each letter.
+// -> MouseEvent
+// -> MouseEvent
 ```
 
 
