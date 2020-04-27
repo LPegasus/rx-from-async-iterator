@@ -1,4 +1,8 @@
-import { Observable, isObservable } from "rxjs";
+import { Observable } from "rxjs";
+
+function isObservable(value: any): value is Observable<any> {
+  return value && typeof value.subscribe === "function";
+}
 
 export function fromAsyncIterator<T = unknown>(
   g:
@@ -23,7 +27,7 @@ export function asStream<T = unknown>(
     const run = () => {
       const result = g.next();
       result.then(
-        i => {
+        (i) => {
           if (i.done === true) {
             ob.complete();
           } else if (ob.closed === true || ob.isStopped === true) {
@@ -39,7 +43,7 @@ export function asStream<T = unknown>(
                 },
                 complete() {
                   run();
-                }
+                },
               });
             } else {
               ob.next(i.value);
@@ -47,7 +51,7 @@ export function asStream<T = unknown>(
             }
           }
         },
-        err => {
+        (err) => {
           ob.error(err);
         }
       );

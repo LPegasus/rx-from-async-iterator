@@ -1,4 +1,7 @@
-import { Observable, isObservable } from "rxjs";
+import { Observable } from "rxjs";
+function isObservable(value) {
+    return value && typeof value.subscribe === "function";
+}
 export function fromAsyncIterator(g) {
     const _g = typeof g === "function" ? g : () => g;
     return new Observable(asStream(_g));
@@ -8,7 +11,7 @@ export function asStream(gen) {
         const g = gen();
         const run = () => {
             const result = g.next();
-            result.then(i => {
+            result.then((i) => {
                 if (i.done === true) {
                     ob.complete();
                 }
@@ -26,7 +29,7 @@ export function asStream(gen) {
                             },
                             complete() {
                                 run();
-                            }
+                            },
                         });
                     }
                     else {
@@ -34,7 +37,7 @@ export function asStream(gen) {
                         run();
                     }
                 }
-            }, err => {
+            }, (err) => {
                 ob.error(err);
             });
         };
