@@ -1,7 +1,6 @@
 import { interval } from "rxjs";
 import { take, mapTo, map } from "rxjs/operators";
-import { fromAsyncIterator, isAsyncIteratorFunction } from "../src/index";
-import { isAsyncIterator } from "./../src/index";
+import { fromAsyncIterator } from "../src/index";
 
 function* gen() {
   yield 1;
@@ -126,16 +125,6 @@ it("after unsubscribe should stop AsyncIterator", done => {
   });
 });
 
-it("isAsyncIteratorFunction", () => {
-  expect(isAsyncIteratorFunction(gen)).toBeFalsy();
-  expect(isAsyncIteratorFunction(gen3)).toBeTruthy();
-});
-
-it("isAsyncIterator", () => {
-  expect(isAsyncIterator(gen())).toBeFalsy();
-  expect(isAsyncIterator(gen3())).toBeTruthy();
-});
-
 it("yield Observable will be concat", done => {
   const callback = jest.fn();
   const stream$ = interval(100).pipe(take(3), mapTo("a"));
@@ -170,7 +159,7 @@ it("yield Observalbe with error", done => {
     expect(callback).toHaveBeenNthCalledWith(5, 1);
     expect(callback).toHaveBeenCalledTimes(5);
     expect(completeCallback).toBeCalledTimes(0);
-    expect(errCallback).toHaveBeenCalledWith(err);
+    expect(errCallback).toHaveBeenCalledWith<any>(err);
     done();
   });
   const stream$ = interval(100).pipe(

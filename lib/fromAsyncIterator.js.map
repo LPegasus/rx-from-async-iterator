@@ -1,0 +1,1 @@
+{"version":3,"file":"fromAsyncIterator.js","sourceRoot":"","sources":["../src/fromAsyncIterator.ts"],"names":[],"mappings":";;;AAAA,+BAAkC;AAClC,yCAAsC;AAEtC,SAAgB,iBAAiB,CAC/B,CAEyC;IAEzC,MAAM,EAAE,GACN,OAAO,CAAC,KAAK,UAAU,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,GAAG,EAAE,CAAC,CAAC,CAAC;IACxC,OAAO,IAAI,iBAAU,CAAI,mBAAQ,CAAC,EAAE,CAAC,CAAC,CAAC;AACzC,CAAC;AARD,8CAQC"}

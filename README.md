@@ -95,3 +95,4 @@ fromAsyncIterator(pollCheckLogin()).subscribe((status) => {
 });
 ```
 
+## [Try it](https://codepen.io/LPegasus/pen/ExgPQQz?editors=0011)
